@@ -1,11 +1,21 @@
-.env
+# Python
 __pycache__/
-*.pyc
-.ipynb_checkpoints/
+*.py[cod]
+
+# macOS
 .DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Secrets
 .env
-__pycache__/
-*.pyc
-.ipynb_checkpoints/
-.virtual_documents/
-.DS_Store
+
+# IDE
+.vscode/
+.idea/
