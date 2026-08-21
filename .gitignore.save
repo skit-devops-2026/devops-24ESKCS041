@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+.env
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.virtual_documents/
+.DS_Store
