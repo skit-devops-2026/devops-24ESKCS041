@@ -39,7 +39,9 @@ def test_feature_file_contains_expected_features():
 
     features = joblib.load("models/aqi_features.joblib")
 
-    assert len(features) == 999
+    # The saved feature list should contain exactly the same
+    # number of features expected by the API.
+    assert len(features) == len(FEATURES)
 
     for feature in FEATURES:
         assert feature in features
@@ -99,3 +101,26 @@ def test_home_endpoint():
     response = client.get("/")
 
     assert response.status_code == 200
+
+
+def test_prediction_with_high_pollution():
+    """Check that the API handles higher pollutant concentrations."""
+
+    payload = {
+        "CO": 2.0,
+        "NH3": 40,
+        "NO2": 80,
+        "OZONE": 100,
+        "PM10": 150,
+        "PM2.5": 90,
+        "SO2": 50,
+    }
+
+    response = client.post("/predict-aqi", json=payload)
+
+    assert response.status_code == 200
+
+    result = response.json()
+
+    assert 0 <= result["predicted_aqi"] <= 500
+    assert result["category"] != ""
