@@ -9,4 +9,8 @@ COPY . .
 
 EXPOSE 5000
 
+<<<<<<< HEAD
 CMD ["python", "app.py"]
+=======
+CMD ["python", "app.py"]
+>>>>>>> 760b9ac (Add Dockerfile and GitHub Actions workflow)
