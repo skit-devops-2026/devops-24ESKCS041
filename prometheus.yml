@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "aqi-api"
+    static_configs:
+      - targets: ["aqi-api:5000"]
+
+  - job_name: "todo-app"
+    static_configs:
+      - targets: ["app:5000"]
