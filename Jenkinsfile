@@ -2,65 +2,48 @@ pipeline {
     agent any
 
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
 
-        stage('Environment') {
+        stage('Environment Info') {
             steps {
-                sh 'python3 --version'
-                sh 'python3 -m pip --version'
+                sh 'python3 --version || python --version'
+                sh 'docker --version'
             }
         }
 
-        stage('Create Virtual Environment') {
+        stage('Install Dependencies & Test') {
             steps {
-                sh 'python3 -m venv .jenkins-venv'
+                sh 'python3 -m venv .venv || python -m venv .venv'
+                sh '. .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt && pytest -v'
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Build Docker Image') {
             steps {
-                sh '.jenkins-venv/bin/python -m pip install --upgrade pip'
-                sh '.jenkins-venv/bin/python -m pip install -r requirements.txt'
+                sh 'docker build -t aqi-prediction:latest .'
             }
         }
 
-        stage('Run Tests') {
+        stage('Verify Monitoring Configs') {
             steps {
-                sh '.jenkins-venv/bin/python -m pytest -v'
-            }
-        }
-
-        stage('Verify Project') {
-            steps {
-                sh 'test -f app.py'
-                sh 'test -f predict.py'
-                sh 'test -f requirements.txt'
-                sh 'test -d models'
-                sh 'test -d tests'
-                sh 'test -f models/random_forest_classifier.joblib'
-                sh 'test -f models/aqi_regression_model.joblib'
-
-                echo 'AirQualityPrediction project verification successful.'
+                sh 'test -f monitoring/prometheus.yml'
+                sh 'test -f monitoring/aqi-dashboard.json'
+                sh 'test -f docker-compose.yml'
+                echo 'Monitoring and Docker configurations verified.'
             }
         }
     }
 
     post {
         success {
-            echo 'AirQualityPrediction Jenkins pipeline completed successfully.'
+            echo 'Pipeline completed successfully!'
         }
-
         failure {
-            echo 'AirQualityPrediction Jenkins pipeline failed.'
-        }
-
-        always {
-            echo 'Jenkins build finished.'
+            echo 'Pipeline failed.'
         }
     }
 }

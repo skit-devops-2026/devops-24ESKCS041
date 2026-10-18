@@ -2,6 +2,8 @@ from fastapi import FastAPI
 import joblib
 import pandas as pd
 import os
+import uvicorn
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # ==========================================
 # APP
@@ -12,6 +14,9 @@ app = FastAPI(
     description="API for AQI prediction using Machine Learning",
     version="1.0"
 )
+
+# Instrument FastAPI app with Prometheus metrics
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 # ==========================================
 # PATHS
@@ -48,7 +53,8 @@ features = joblib.load(
 def home():
     return {
         "message": "AQI Prediction API is running!",
-        "features": features
+        "features": features,
+        "status": "healthy"
     }
 
 # ==========================================
@@ -57,7 +63,6 @@ def home():
 
 @app.post("/predict-aqi")
 def predict_aqi(data: dict):
-
     # Create input DataFrame
     input_data = pd.DataFrame(
         [[data[feature] for feature in features]],
@@ -78,3 +83,6 @@ def predict_aqi(data: dict):
         "predicted_aqi": round(float(predicted_aqi), 2),
         "category": predicted_category
     }
+
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", port=5000, reload=False)
