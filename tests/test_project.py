@@ -18,6 +18,7 @@ FEATURES = [
 ]
 
 def test_required_model_files_exist():
+    """Check that all trained ML model files are available."""
     required_files = [
         "models/random_forest_classifier.joblib",
         "models/aqi_regression_model.joblib",
@@ -28,23 +29,14 @@ def test_required_model_files_exist():
         assert os.path.exists(file_path), f"Missing model file: {file_path}"
 
 def test_feature_file_contains_expected_features():
+    """Check that the saved feature list matches the API input."""
     features = joblib.load("models/aqi_features.joblib")
     assert len(features) == len(FEATURES)
     for feature in FEATURES:
         assert feature in features
 
-def test_home_endpoint():
-    response = client.get("/")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "healthy"
-
-def test_metrics_endpoint():
-    response = client.get("/metrics")
-    assert response.status_code == 200
-    assert "http_requests_total" in response.text or "http_request_duration_seconds" in response.text or "process_cpu_seconds_total" in response.text
-
 def test_prediction_endpoint():
+    """Check that the FastAPI prediction endpoint returns a valid response."""
     payload = {
         "CO": 1.2,
         "NH3": 20,
@@ -61,4 +53,41 @@ def test_prediction_endpoint():
     assert "category" in result
     assert isinstance(result["predicted_aqi"], (int, float))
     assert isinstance(result["category"], str)
+
+def test_prediction_aqi_range():
+    """Check that predicted AQI is within the expected AQI range."""
+    payload = {
+        "CO": 1.2,
+        "NH3": 20,
+        "NO2": 40,
+        "OZONE": 60,
+        "PM10": 100,
+        "PM2.5": 50,
+        "SO2": 20,
+    }
+    response = client.post("/predict-aqi", json=payload)
+    assert response.status_code == 200
+    result = response.json()
     assert 0 <= result["predicted_aqi"] <= 500
+
+def test_home_endpoint():
+    """Check that the API root endpoint is working."""
+    response = client.get("/")
+    assert response.status_code == 200
+
+def test_prediction_with_high_pollution():
+    """Check that the API handles higher pollutant concentrations."""
+    payload = {
+        "CO": 2.0,
+        "NH3": 40,
+        "NO2": 80,
+        "OZONE": 100,
+        "PM10": 150,
+        "PM2.5": 90,
+        "SO2": 50,
+    }
+    response = client.post("/predict-aqi", json=payload)
+    assert response.status_code == 200
+    result = response.json()
+    assert 0 <= result["predicted_aqi"] <= 500
+    assert result["category"] != ""

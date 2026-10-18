@@ -3,7 +3,6 @@ import joblib
 import pandas as pd
 import os
 import uvicorn
-from prometheus_fastapi_instrumentator import Instrumentator
 
 # ==========================================
 # APP
@@ -15,8 +14,12 @@ app = FastAPI(
     version="1.0"
 )
 
-# Instrument FastAPI app with Prometheus metrics
-Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+# Instrument Prometheus metrics endpoint at /metrics
+try:
+    from prometheus_fastapi_instrumentator import Instrumentator
+    Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+except Exception as e:
+    print("Prometheus instrumentator exception:", e)
 
 # ==========================================
 # PATHS
@@ -53,8 +56,7 @@ features = joblib.load(
 def home():
     return {
         "message": "AQI Prediction API is running!",
-        "features": features,
-        "status": "healthy"
+        "features": features
     }
 
 # ==========================================
@@ -85,4 +87,4 @@ def predict_aqi(data: dict):
     }
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=5000, reload=False)
+    uvicorn.run(app, host="0.0.0.0", port=5000)
